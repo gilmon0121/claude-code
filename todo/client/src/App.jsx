@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
+import { todoStore } from './todoStore'
 import './App.css'
-
-const API_BASE = 'http://localhost:4000/api/todos'
 
 function App() {
   const [todos, setTodos] = useState([])
@@ -16,9 +15,7 @@ function App() {
   async function fetchTodos() {
     try {
       setLoading(true)
-      const res = await fetch(API_BASE)
-      if (!res.ok) throw new Error('failed to load todos')
-      setTodos(await res.json())
+      setTodos(await todoStore.list())
       setError('')
     } catch (err) {
       setError('할 일을 불러오지 못했습니다. 서버가 실행 중인지 확인하세요.')
@@ -31,35 +28,19 @@ function App() {
     e.preventDefault()
     const trimmed = title.trim()
     if (!trimmed) return
-    const res = await fetch(API_BASE, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: trimmed }),
-    })
-    if (res.ok) {
-      const todo = await res.json()
-      setTodos((prev) => [todo, ...prev])
-      setTitle('')
-    }
+    const todo = await todoStore.create(trimmed)
+    setTodos((prev) => [todo, ...prev])
+    setTitle('')
   }
 
   async function toggleTodo(todo) {
-    const res = await fetch(`${API_BASE}/${todo.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ completed: !todo.completed }),
-    })
-    if (res.ok) {
-      const updated = await res.json()
-      setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
-    }
+    const updated = await todoStore.update(todo.id, { completed: !todo.completed })
+    setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
   }
 
   async function deleteTodo(id) {
-    const res = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' })
-    if (res.ok || res.status === 204) {
-      setTodos((prev) => prev.filter((t) => t.id !== id))
-    }
+    await todoStore.remove(id)
+    setTodos((prev) => prev.filter((t) => t.id !== id))
   }
 
   const remaining = todos.filter((t) => !t.completed).length
