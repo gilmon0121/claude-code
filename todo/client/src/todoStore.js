@@ -22,13 +22,15 @@ async function list() {
   return res.json()
 }
 
-async function create(title) {
+async function create({ title, dueDate = null, priority = 'medium' }) {
   if (useLocalStorage) {
     const todos = readLocal()
     const todo = {
       id: crypto.randomUUID(),
       title,
       completed: false,
+      dueDate: dueDate || null,
+      priority,
       createdAt: new Date().toISOString(),
     }
     writeLocal([todo, ...todos])
@@ -37,7 +39,7 @@ async function create(title) {
   const res = await fetch(API_BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title }),
+    body: JSON.stringify({ title, dueDate, priority }),
   })
   return res.json()
 }

@@ -28,7 +28,7 @@ app.get('/api/todos', async (req, res) => {
 });
 
 app.post('/api/todos', async (req, res) => {
-  const { title } = req.body;
+  const { title, dueDate, priority } = req.body;
   if (!title || !title.trim()) {
     return res.status(400).json({ error: 'title is required' });
   }
@@ -37,6 +37,8 @@ app.post('/api/todos', async (req, res) => {
     id: crypto.randomUUID(),
     title: title.trim(),
     completed: false,
+    dueDate: dueDate || null,
+    priority: ['low', 'medium', 'high'].includes(priority) ? priority : 'medium',
     createdAt: new Date().toISOString(),
   };
   todos.unshift(todo);
@@ -56,6 +58,12 @@ app.patch('/api/todos/:id', async (req, res) => {
   }
   if (typeof req.body.title === 'string' && req.body.title.trim()) {
     todo.title = req.body.title.trim();
+  }
+  if ('dueDate' in req.body) {
+    todo.dueDate = req.body.dueDate || null;
+  }
+  if (['low', 'medium', 'high'].includes(req.body.priority)) {
+    todo.priority = req.body.priority;
   }
   await writeTodos(todos);
   res.json(todo);
